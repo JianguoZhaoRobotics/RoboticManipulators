@@ -25,7 +25,7 @@ Lab 1 will introduce you to Python programming using VS Code. A companion refere
 
 **2. Required Software**
 
-Before connecting the robot, we must install two essential tools:
+Before connecting the robot, we must install three essential tools:
 
 1.  **Miniconda**
 
@@ -64,7 +64,7 @@ To create an environment, open a terminal for your operating system:
 
 -   Linux: Open your system Terminal (e.g., Ctrl+Alt+T).
 
-Then copy and paste the following run:
+Then copy and paste the following command and run it:
 
 **conda create -y -n me416 python=3.10**
 
@@ -92,7 +92,7 @@ a.  Installing ffmpeg, which is used for video and media handling.
 
 **conda install ffmpeg=7.1.1 -c conda-forge**
 
-b.  Cloning LeRobot from GitHub: LeRobot is the package used to control the motor we will use for this course as well as control SO101 robot arm we will use later.
+b.  Cloning LeRobot from GitHub: LeRobot is the package used to control both the motor we will use in this course and the SO-ARM101 robot arm we will use later.
 
 **git clone <https://github.com/huggingface/lerobot.git>**
 
@@ -108,7 +108,7 @@ d.  Installing the Feetech SDK (motor communication library):
 
 **pip install -e ".[feetech]"**
 
-e.  Installing other libraries: MuJoCo is a physics simulation engine we will use extensively in later labs to simulate robot motion. Matplotlib is a plotting library used to visualize data such as sensor readings and robot trajectories. ipywidgets provides interactive UI elements (sliders, buttons, etc.) for use in Jupyter notebooks
+e.  Installing other libraries: MuJoCo is a physics simulation engine we will use extensively in later labs to simulate robot motion. Matplotlib is a plotting library used to visualize data such as sensor readings and robot trajectories. ipywidgets provides interactive UI elements (sliders, buttons, etc.) for use in Jupyter notebooks.
 
 **pip install mujoco matplotlib ipywidgets**
 
@@ -125,7 +125,7 @@ Select the version for your operating system and follow the default installation
 
 <img src="Figures/Lab0/vscode.png" width="800">
 
-**7. Install necessary extensions in VS code**
+**7. Install necessary extensions in VS Code**
 
 VS Code extensions add language support and tools on top of the base editor. Install extensions by clicking the Extensions icon in the left sidebar (or pressing Ctrl+Shift+X on Windows/Linux, Cmd+Shift+X on macOS), searching by name, and clicking Install.
 
@@ -140,8 +140,8 @@ a.  **Python (by Microsoft)**
 b.  **Jupyter (by Microsoft)**
 
 > Allows you to create and run Jupyter Notebook files (.ipynb) directly inside VS Code, without opening a separate browser window.
-
-**Search for: Jupyter**
+>
+> **Search for: Jupyter**
 
 c.  **Pylance (by Microsoft)**
 
@@ -151,7 +151,7 @@ c.  **Pylance (by Microsoft)**
 
 d.  **GitHub Copilot or Claude Code for VS Code**
 
-> An AI coding assistant that suggests code as you type. This is built in VS code. University students can activate it for free using a GitHub Education account — sign up at <https://education.github.com/students> before installing. Note that you need to register for GitHub: <https://github.com/>. You can also use ClaudeCode instead of GitHub Copilot. In this case, you need to search and install an extension called: **Claude Code for VS Code**
+> An AI coding assistant that suggests code as you type. This is built into VS Code. University students can activate it for free using a GitHub Education account — sign up at <https://education.github.com/students> before installing. Note that you need to register for GitHub: <https://github.com/>. You can also use Claude Code instead of GitHub Copilot. In this case, you need to search and install an extension called: **Claude Code for VS Code**
 
 **8. Verify Your Setup**
 
@@ -169,4 +169,4 @@ With the me416 environment activated and your terminal in the lerobot folder, ru
 
 **python verify_setup.py**
 
-When prompted, enter your full name. Copy the ENTIRE terminal output, including the confirmation code, and paste it into the Lab 1 Prelab submission on Canvas. Submissions missing the confirmation code, or showing a FAIL status, will not receive credit or partial credit.
+When prompted, enter your full name. Copy the ENTIRE terminal output, including the confirmation code, and paste it into the Lab 0 submission on Canvas. Submissions missing the confirmation code, or showing a FAIL status, will not receive credit or partial credit.
