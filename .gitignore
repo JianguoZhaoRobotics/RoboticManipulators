@@ -1,0 +1,10 @@
+# Jupyter Book / MyST build output
+_build/
+node_modules/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
