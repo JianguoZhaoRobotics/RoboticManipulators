@@ -157,7 +157,7 @@ d.  **GitHub Copilot or Claude Code for VS Code**
 
 Before you receive credit for this assignment, you must run a short verification script and submit its output. The script checks that the required Python packages are installed, that VS Code and its required extensions are installed, and generates a confirmation code tied to your name and the submission time, so it cannot be filled in without actually completing the setup.
 
-Download verify_setup.py (provided separately on Canvas) and save it inside the lerobot folder you cloned in Step 5 — this way it's easy to find, since your terminal will likely already be in that folder. If you cloned it into your home directory as instructed, the folder is:
+Download [verify_setup.py](verify_setup.py) and save it inside the lerobot folder you cloned in Step 5 — this way it's easy to find, since your terminal will likely already be in that folder. If you cloned it into your home directory as instructed, the folder is:
 
 Windows: C:\Users\\<your-username\>\lerobot
 
