@@ -20,8 +20,7 @@ By the end of this assignment, you will:
 
 - Verify your setup and submit a confirmation code
 
-Lab 1 will introduce you to Python programming using VS Code. A companion reference is available at:
-<https://jianguozhaorobotics.github.io/RobotMechanicsControl/lab1-intro-to-python/>
+Lab 1 will introduce you to Python programming using VS Code and the environment you have set by following the procedure listed here. 
 
 **2. Required Software**
 
