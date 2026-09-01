@@ -18,6 +18,7 @@ project:
     - title: Labs
       children:
         - file: Lab0.md
+        - file: Lab1 Intro to Python.ipynb
 
 site:
   template: book-theme
