@@ -65,9 +65,9 @@ To create an environment, open a terminal for your operating system:
 
 Then copy and paste the following command and run it:
 
-**conda create -y -n me416 python=3.10**
+**conda create -y -n me416 python=3.12**
 
-This command creates a new, empty environment named me416 running Python 3.10. You only need to run this once. The -y flag automatically confirms all prompts, so you do not have to type "yes" manually. The -n flag (short for --name) sets the name of the environment — in this case, me416.
+This command creates a new, empty environment named me416 running Python 3.12 — LeRobot requires Python 3.12 or later. You only need to run this once. The -y flag automatically confirms all prompts, so you do not have to type "yes" manually. The -n flag (short for --name) sets the name of the environment — in this case, me416.
 
 <img src="Figures/Lab0/me416Env.png" width="600">
 
