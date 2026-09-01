@@ -65,7 +65,9 @@ To create an environment, open a terminal for your operating system:
 
 Then copy and paste the following command and run it:
 
-**conda create -y -n me416 python=3.12**
+```bash
+conda create -y -n me416 python=3.12
+```
 
 This command creates a new, empty environment named me416 running Python 3.12 — LeRobot requires Python 3.12 or later. You only need to run this once. The -y flag automatically confirms all prompts, so you do not have to type "yes" manually. The -n flag (short for --name) sets the name of the environment — in this case, me416.
 
@@ -73,7 +75,9 @@ This command creates a new, empty environment named me416 running Python 3.12 �
 
 After creating the environment, we can activate the environment so that we can install required packages for this course.
 
-**conda activate me416**
+```bash
+conda activate me416
+```
 
 After activation, you should see the environment name in parentheses at the beginning of your terminal line:
 
@@ -89,27 +93,47 @@ With the me416 environment active, install the following packages by copying and
 
 a.  Installing ffmpeg, which is used for video and media handling.
 
-**conda install ffmpeg=7.1.1 -c conda-forge**
+```bash
+conda install ffmpeg=7.1.1 -c conda-forge
+```
 
 b.  Cloning LeRobot from GitHub: LeRobot is the package used to control both the motor we will use in this course and the SO-ARM101 robot arm we will use later.
 
-**git clone <https://github.com/huggingface/lerobot.git>**
+Git may not be installed by default. Install it into your conda environment first:
+
+```bash
+conda install -y git -c conda-forge
+```
+
+Then clone the repository:
+
+```bash
+git clone https://github.com/huggingface/lerobot.git
+```
 
 Then navigate into the cloned directory:
 
-**cd lerobot**
+```bash
+cd lerobot
+```
 
 c.  Install the library in editable mode:
 
-**pip install -e .**
+```bash
+pip install -e .
+```
 
 d.  Installing the Feetech SDK (motor communication library):
 
-**pip install -e ".[feetech]"**
+```bash
+pip install -e ".[feetech]"
+```
 
 e.  Installing other libraries: MuJoCo is a physics simulation engine we will use extensively in later labs to simulate robot motion. Matplotlib is a plotting library used to visualize data such as sensor readings and robot trajectories. ipywidgets provides interactive UI elements (sliders, buttons, etc.) for use in Jupyter notebooks.
 
-**pip install mujoco matplotlib ipywidgets**
+```bash
+pip install mujoco matplotlib ipywidgets
+```
 
 **6. Install VS Code**
 
@@ -172,6 +196,8 @@ Linux: /home/\<your-username\>/lerobot
 
 With the me416 environment activated and your terminal in the lerobot folder, run the script:
 
-**python verify_setup.py**
+```bash
+python verify_setup.py
+```
 
 When prompted, enter your full name. Copy the ENTIRE terminal output, including the confirmation code, and paste it into the Lab 0 submission on Canvas. Submissions missing the confirmation code, or showing a FAIL status, will not receive credit or partial credit.
