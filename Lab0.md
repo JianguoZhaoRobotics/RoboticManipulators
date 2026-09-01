@@ -111,7 +111,15 @@ Then clone the repository:
 git clone https://github.com/huggingface/lerobot.git
 ```
 
-Then navigate into the cloned directory:
+This will create a new folder on your computer at:
+
+Windows: C:\Users\\<your-username\>\lerobot
+
+macOS: /Users/\<your-username\>/lerobot
+
+Linux: /home/\<your-username\>/lerobot
+
+You can navigate into the cloned directory:
 
 ```bash
 cd lerobot
@@ -133,6 +141,12 @@ e.  Installing other libraries: MuJoCo is a physics simulation engine we will us
 
 ```bash
 pip install mujoco matplotlib ipywidgets
+```
+
+If something didn't work out properly, you can use the following to delete the environment and start over. Make sure you're not currently inside that environment when you run it (run conda deactivate first if needed).
+
+```bash
+conda env remove -n me416
 ```
 
 **6. Install VS Code**
