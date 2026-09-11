@@ -128,20 +128,97 @@ def write_motor_id(port, current_id, new_id, existing_ids=None):
             "Two motors cannot share the same ID -- choose a different NEW_ID."
         )
 
+    if current_id == new_id:
+        print(f"Motor ID is already {current_id}. No change made.")
+        return
+
     bus = FeetechMotorsBus(
         port=port,
         motors={"motor": Motor(current_id, "sts3215", MotorNormMode.DEGREES)},
     )
     bus.connect(False)  # connect without initializing
 
-    if current_id != new_id:
-        bus.write("ID", "motor", new_id)
-        print(f"Motor ID changed: {current_id} → {new_id}")
-        print("Power-cycle the motor now to save the new ID permanently.")
-    else:
-        print(f"Motor ID is already {current_id}. No change made.")
-
+    # The ID register lives in EEPROM, which the motor write-protects (Lock=1)
+    # by default. Writing to a locked EEPROM register is silently ignored --
+    # the motor still ACKs the packet, so no error is raised even though the ID
+    # never actually changes. Unlock EEPROM first so the write takes effect.
+    bus.write("Lock", "motor", 0, num_retry=3)
+    _flush(bus, 0.1)
+    bus.write("ID", "motor", new_id, num_retry=3)
+    _flush(bus, 0.1)
     bus.port_handler.closePort()
+
+    # The motor now answers on new_id, not current_id -- reconnect under the
+    # new ID to re-lock EEPROM (protects against accidental future writes).
+    bus2 = FeetechMotorsBus(
+        port=port,
+        motors={"motor": Motor(new_id, "sts3215", MotorNormMode.DEGREES)},
+    )
+    bus2.connect(False)
+    bus2.write("Lock", "motor", 1, num_retry=3)
+    bus2.port_handler.closePort()
+
+    print(f"Motor ID changed: {current_id} → {new_id}")
+    print("Power-cycle the motor now to save the new ID permanently.")
+
+
+def scan_motor_id(port):
+    """Detect the ID of the single motor connected to the bus, without needing to
+    know it in advance.
+
+    Broadcasts a ping to every possible ID and returns the ID of the one motor
+    that answers. Raises a ConnectionError if no motor responds, or if more than
+    one does (only one motor should be connected to the bus while scanning/
+    assigning IDs).
+    """
+    bus = FeetechMotorsBus(port=port, motors={})
+    bus.connect(False)  # connect without a handshake -- we don't know the ID yet
+    found = bus.broadcast_ping(num_retry=3)
+    bus.port_handler.closePort()
+
+    if not found:
+        raise ConnectionError(
+            "No motor responded on the bus. Check that a motor is powered and connected."
+        )
+    if len(found) > 1:
+        raise ConnectionError(
+            f"Multiple motors responded on the bus: {sorted(found)}. "
+            "Disconnect all but the motor you want to re-ID before scanning."
+        )
+    return next(iter(found))
+
+
+def assign_motor_id(port, existing_ids=None):
+    """Interactively reassign the ID of the single motor connected to the bus.
+
+    Reads the motor's current ID automatically (via scan_motor_id -- no need to
+    know it beforehand), prints it, then prompts for the new ID to assign. Reuses
+    write_motor_id to perform the write, so a new_id already in existing_ids is
+    refused and you're asked to try again.
+
+    Returns the new ID once the write succeeds.
+    """
+    current_id = scan_motor_id(port)
+    print(f"Found motor with ID {current_id}.")
+
+    while True:
+        raw = input("Enter the new ID for this motor (1-253): ").strip()
+        try:
+            new_id = int(raw)
+            if not (1 <= new_id <= 253):
+                raise ValueError
+        except ValueError:
+            print("Please enter a whole number between 1 and 253.")
+            continue
+
+        try:
+            write_motor_id(port, current_id, new_id, existing_ids=existing_ids)
+        except ValueError as e:
+            print(e)
+            continue
+        return new_id
+
+
 
 
 # ── Command / read any number of motors ─────────────────────────────────────────
@@ -191,26 +268,34 @@ def read_angles(bus):
 
 def move_to_angle_and_record(bus, target_deg, record_sec=3.0, sample_hz=50):
     """Send a position command to a single-motor bus, then record angle vs. time
-    at sample_hz for record_sec seconds.
+    for record_sec seconds (target rate: sample_hz).
+
+    Stops on elapsed wall-clock time rather than a fixed sample count -- a
+    single read_angles() round trip can take longer than 1/sample_hz, so a
+    fixed count would make the recording run longer than record_sec actually
+    asks for. This way record_sec means what it says even if the achieved
+    rate falls short of sample_hz.
 
     Returns:
         times     -- array of timestamps in seconds
         positions -- array of measured angles in degrees
     """
-    dt        = 1.0 / sample_hz
-    n_samples = int(record_sec * sample_hz)
-    times     = np.zeros(n_samples)
-    positions = np.zeros(n_samples)
+    dt = 1.0 / sample_hz
+    times_list     = []
+    positions_list = []
 
     write_angles(bus, target_deg)
     t_start = time.time()
 
-    for k in range(n_samples):
-        tick         = time.time()
-        positions[k] = read_angles(bus)
-        times[k]     = tick - t_start
+    while True:
+        tick  = time.time()
+        t_now = tick - t_start
+        if t_now >= record_sec:
+            break
+        positions_list.append(read_angles(bus))
+        times_list.append(t_now)
         elapsed = time.time() - tick
         if elapsed < dt:
             time.sleep(dt - elapsed)
 
-    return times, positions
+    return np.array(times_list), np.array(positions_list)
