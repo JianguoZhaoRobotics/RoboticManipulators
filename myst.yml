@@ -13,12 +13,17 @@ project:
     - file: Introduction.ipynb
     - title: Chapters
       children:
-        - file: Ch2 Actuators for Robotics.ipynb
-        - file: Ch3 Kinematics in 2D.ipynb
+        - file: Chapters/Chapter2/Ch2 Actuators for Robotics.ipynb
+        - file: Chapters/Chapter3/Ch3 Kinematics in 2D.ipynb
     - title: Labs
       children:
-        - file: Lab0.md
-        - file: Lab1 Intro to Python.ipynb
+        - file: Labs/Lab0/Lab0.md
+        - file: Labs/Lab1/Lab1 Intro to Python.ipynb
+        - title: Lab 2
+          children:
+            - file: Labs/Lab2/Lab2 Part1 - Single Motor Control.ipynb
+            - file: Labs/Lab2/Lab2 Part2 - Two Motor Control.ipynb
+            - file: Labs/Lab2/Lab2 Problems.ipynb
 
 site:
   template: book-theme

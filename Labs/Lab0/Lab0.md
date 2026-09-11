@@ -43,7 +43,7 @@ Download Miniconda from the official website:
 
 Select the installer for your operating system and follow the default installation steps.
 
-<img src="Figures/Lab0/anaconda.png" width="800">
+<img src="anaconda.png" width="800">
 
 After installation, restart your computer.
 
@@ -71,7 +71,7 @@ conda create -y -n me416 python=3.12
 
 This command creates a new, empty environment named me416 running Python 3.12 — LeRobot requires Python 3.12 or later. You only need to run this once. The -y flag automatically confirms all prompts, so you do not have to type "yes" manually. The -n flag (short for --name) sets the name of the environment — in this case, me416.
 
-<img src="Figures/Lab0/me416Env.png" width="600">
+<img src="me416Env.png" width="600">
 
 After creating the environment, we can activate the environment so that we can install required packages for this course.
 
@@ -81,7 +81,7 @@ conda activate me416
 
 After activation, you should see the environment name in parentheses at the beginning of your terminal line:
 
-<img src="Figures/Lab0/me416activate.png" width="400">
+<img src="me416activate.png" width="400">
 
 This prefix confirms that you are now working inside the me416 environment. Any Python commands or package installations you run will apply only to this environment, not to other environments or the rest of your computer.
 
@@ -160,7 +160,7 @@ Select the version for your operating system and follow the default installation
 **Go through this tutorial:
 <https://code.visualstudio.com/docs/editing/getting-started>**
 
-<img src="Figures/Lab0/vscode.png" width="800">
+<img src="vscode.png" width="800">
 
 **7. Install necessary extensions in VS Code**
 
