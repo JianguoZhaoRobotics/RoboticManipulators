@@ -7,6 +7,8 @@ Chapters currently published:
 1. Introduction
 2. Actuators for Robotics
 3. Kinematics in 2D
+4. Homogeneous Transformation
+5. Forward Position Kinematics
 
 More chapters are in progress and will be added as they're finished.
 

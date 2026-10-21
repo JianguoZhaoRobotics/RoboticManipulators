@@ -8,3 +8,7 @@ node_modules/
 # OS/editor cruft
 .DS_Store
 Thumbs.db
+
+# Python / backups
+__pycache__/
+*.bak

@@ -13,8 +13,10 @@ project:
     - file: Introduction.ipynb
     - title: Chapters
       children:
-        - file: Chapters/Chapter2/Ch2 Actuators for Robotics.ipynb
-        - file: Chapters/Chapter3/Ch3 Kinematics in 2D.ipynb
+        - file: Chapters/Ch2 Robot Actuators/Ch2 Actuators for Robotics.ipynb
+        - file: Chapters/Ch3 2D Kinematics/Ch3 Kinematics in 2D.ipynb
+        - file: Chapters/Ch4 Homogeneous Transformation/Ch4 Homogeneous Transformation.ipynb
+        - file: Chapters/Ch5 Forward Position Kinematics/Ch5 Forward Position Kinematics.ipynb
     - title: Labs
       children:
         - file: Labs/Lab0/Lab0.md

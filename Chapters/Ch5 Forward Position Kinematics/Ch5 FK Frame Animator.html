@@ -1,0 +1,507 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>FK Frame Animator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: lab-bench split. 3D stage on the left, control panel + live matrix on the right; stacks on phones. */
+:root{
+  --bg:#eef1f4; --panel:#fbfcfd; --line:#d5dce4; --fg:#18212c; --muted:#5b6878; --accent:#1d5fd1; --accent-fg:#ffffff;
+  --chip:#e7ecf2; --chip-done:#dbe6fb; --ok:#14804a; --ok-bg:#e1f3e8;
+  --scene:#f6f8fa; --grid1:#b4bfcb; --grid2:#dde3ea; --link:#9aa6b4; --joint:#3a4655; --tool:#1d5fd1;
+  --f0:#6b7684; --f1:#d1342b; --f2:#2156d1; --f3:#16884a; --f4:#e07b12; --f5:#7b3fc4; --f6:#0e8585; --f7:#8a6a10; --moving:#18212c;
+  --font-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1319; --panel:#151c24; --line:#28323e; --fg:#e3e8ee; --muted:#93a0b0; --accent:#6b9bff; --accent-fg:#0b1220;
+  --chip:#1f2833; --chip-done:#1d3157; --ok:#4fd38c; --ok-bg:#15301f;
+  --scene:#11171e; --grid1:#3a4654; --grid2:#202934; --link:#5d6b7b; --joint:#b4c0cd; --tool:#6b9bff;
+  --f0:#97a3b1; --f1:#ff6a5e; --f2:#6f9bff; --f3:#3ccf7d; --f4:#ffa24a; --f5:#b48cff; --f6:#3fd0cc; --f7:#d9b54a; --moving:#f4f6f8; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --panel:#151c24; --line:#28323e; --fg:#e3e8ee; --muted:#93a0b0; --accent:#6b9bff; --accent-fg:#0b1220;
+  --chip:#1f2833; --chip-done:#1d3157; --ok:#4fd38c; --ok-bg:#15301f;
+  --scene:#11171e; --grid1:#3a4654; --grid2:#202934; --link:#5d6b7b; --joint:#b4c0cd; --tool:#6b9bff;
+  --f0:#97a3b1; --f1:#ff6a5e; --f2:#6f9bff; --f3:#3ccf7d; --f4:#ffa24a; --f5:#b48cff; --f6:#3fd0cc; --f7:#d9b54a; --moving:#f4f6f8; color-scheme:dark }
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1360px;margin:0 auto;padding-inline:20px;padding-block:18px 28px;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font-family:var(--font-display);font-size:28px;line-height:1.1;text-wrap:balance}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:7px 12px;border-radius:6px;cursor:pointer;display:flex;gap:6px;align-items:baseline}
+.tab b{font-family:var(--font-mono);font-weight:500;color:var(--muted);font-size:12px}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tab[aria-selected="true"] b{color:inherit;opacity:.7}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--scene);aspect-ratio:4/3;max-width:100%;min-height:320px}
+@media (min-width:901px){.stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.views{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.views button{font:inherit;font-size:12px;padding:4px 9px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.caption{position:absolute;left:10px;right:10px;bottom:10px;display:flex}
+.caption span{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 11px;font-size:14px;max-width:100%}
+.caption sub,.chip sub{font-size:.72em}
+.panel{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h2{margin:0;font-family:var(--font-display);font-size:21px}
+.card h3{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.params{margin:0;color:var(--muted);font-size:14px}
+.desc{margin:0;font-size:14px;max-width:62ch}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{font:inherit;font-size:14px;font-weight:500;padding:8px 6px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.joint{display:grid;grid-template-columns:78px minmax(0,1fr) 74px;align-items:center;gap:10px}
+.joint label{font-family:var(--font-mono);font-size:15px}
+.joint label small{display:block;font-family:var(--font-body);font-size:11px;color:var(--muted)}
+.joint output{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;font-size:14px}
+.joint input{width:100%;accent-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.btn{font:inherit;font-size:13px;font-weight:500;padding:6px 11px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn[disabled]{opacity:.45;cursor:default}
+.product{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 4px;font-size:14px}
+.product .lhs{font-family:var(--font-mono);padding-top:5px;margin-right:4px}
+.grp{display:flex;flex-direction:column;align-items:stretch;gap:3px}
+.chips{display:flex;gap:3px}
+.glabel{font-family:var(--font-mono);font-size:11px;text-align:center;border-top:2px solid var(--gc);color:var(--gc);padding-top:1px}
+.chip{font:inherit;font-family:var(--font-mono);font-size:13px;padding:4px 7px;border-radius:5px;border:1px solid transparent;background:var(--chip);color:var(--fg);cursor:pointer;white-space:nowrap}
+.chip.done{background:var(--chip-done)}
+.chip.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mat-wrap{display:flex;align-items:center;gap:10px;overflow-x:auto}
+.mat-lhs{font-family:var(--font-mono);font-size:14px;white-space:nowrap}
+.mat{display:grid;grid-template-columns:repeat(4,auto);gap:2px 14px;padding:6px 10px;border-left:2px solid var(--fg);border-right:2px solid var(--fg);border-radius:3px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:14px;text-align:right}
+.mat span.p{color:var(--accent);font-weight:500}
+.mat span.h{color:var(--muted)}
+.note{margin:0;font-size:13px;color:var(--muted)}
+.closed{font-family:var(--font-mono);font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.desc code{font-family:var(--font-mono);font-size:.9em}
+.ftab{border-collapse:collapse;font-size:13px;width:100%}
+.ftab th{text-align:left;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line);padding:4px 8px 4px 0;white-space:nowrap}
+.ftab td{padding:3px 8px 3px 0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ftab td:nth-child(2){font-family:var(--font-mono);font-size:12px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--ok-bg);color:var(--ok)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">MECH 416 · Forward kinematics from homogeneous transformations</p>
+      <h1>FK Frame Animator</h1>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </header>
+
+  <main class="grid">
+    <section class="stage" id="stage" aria-label="3D view of the robot and its frames">
+      <canvas id="cv"></canvas>
+      <div class="views">
+        <button id="v-iso" type="button">3D</button>
+        <button id="v-top" type="button">Top</button>
+        <button id="v-front" type="button">Front</button>
+      </div>
+      <div class="caption"><span id="caption">Drag to orbit, scroll to zoom.</span></div>
+    </section>
+
+    <aside class="panel">
+      <div class="card">
+        <h2 id="exTitle"></h2>
+        <p class="params" id="exParams"></p>
+        <p class="desc" id="exDesc"></p>
+        <div id="exExtra" hidden></div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="card">
+        <div class="seg" role="group" aria-label="Mode">
+          <button id="m-joint" type="button" aria-pressed="true">Joint motion</button>
+          <button id="m-step" type="button" aria-pressed="false">Step through product</button>
+        </div>
+        <div id="joints" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="row" id="jointBtns">
+          <button class="btn primary" id="b-sweep" type="button">Animate joints</button>
+          <button class="btn" id="b-home" type="button">Home (q = 0)</button>
+          <span id="checks" class="row"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Forward kinematics as a product</h3>
+        <div class="product" id="product"></div>
+        <div class="row" id="stepBtns" hidden>
+          <button class="btn" id="b-reset" type="button">Reset</button>
+          <button class="btn" id="b-back" type="button">◂ Back</button>
+          <button class="btn primary" id="b-step" type="button">Step ▸</button>
+          <button class="btn" id="b-play" type="button">Play all</button>
+        </div>
+        <p class="note" id="prodNote">Each factor moves the frame about or along its <em>current</em> axes. Switch to “Step through product” to watch it happen, or click a factor.</p>
+      </div>
+
+      <div class="card">
+        <h3 id="matTitle">Result</h3>
+        <div class="mat-wrap"><div class="mat-lhs" id="matLhs"></div><div class="mat" id="mat"></div></div>
+        <div class="closed" id="closed"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const D2R=Math.PI/180, R2D=180/Math.PI;
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- 4x4 homogeneous transform helpers (row-major) ---------- */
+const I4=()=>[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+function mul(A,B){const C=new Array(16);for(let i=0;i<4;i++)for(let j=0;j<4;j++){let s=0;for(let k=0;k<4;k++)s+=A[i*4+k]*B[k*4+j];C[i*4+j]=s;}return C;}
+function rot(ax,t){const c=Math.cos(t),s=Math.sin(t);
+  if(ax==='x')return[1,0,0,0,0,c,-s,0,0,s,c,0,0,0,0,1];
+  if(ax==='y')return[c,0,s,0,0,1,0,0,-s,0,c,0,0,0,0,1];
+  return[c,-s,0,0,s,c,0,0,0,0,1,0,0,0,0,1];}
+function trans(ax,d){const T=I4();T[{x:3,y:7,z:11}[ax]]=d;return T;}
+const fmat=(f,s=1)=>f.kind==='rot'?rot(f.axis,f.val*s):trans(f.axis,f.val*s);
+const apply=(T,p)=>[T[0]*p[0]+T[1]*p[1]+T[2]*p[2]+T[3],T[4]*p[0]+T[5]*p[1]+T[6]*p[2]+T[7],T[8]*p[0]+T[9]*p[1]+T[10]*p[2]+T[11]];
+const org=T=>[T[3],T[7],T[11]];
+const F=(kind,axis,val,label)=>({kind,axis,val,label});
+const Rl=(ax,s)=>`Rot<sub>${ax},${s}</sub>`, Tl=(ax,s)=>`Trans<sub>${ax},${s}</sub>`;
+const fmt=(v,n=3)=>{if(Math.abs(v)<5*Math.pow(10,-n-1))v=0;return v.toFixed(n).replace('-','−');};
+
+/* ---------- The four examples from the handout ---------- */
+const EX=[
+{ id:'2r', tab:'Planar 2R', title:'Example 1: Planar 2R arm', params:'L₁ = 1.0, L₂ = 0.7',
+  desc:'Two revolute joints with parallel z-axes (out of the page). At home the arm is stretched along x₀; all frames stay parallel, so the home transforms are pure translations.',
+  joints:[{s:'q₁',type:'R',min:-180,max:180},{s:'q₂',type:'R',min:-180,max:180}],
+  checks:[{label:'q = (90°, −90°)',q:[90,-90]}],
+  view:{target:[0.8,0,0],r:3.3,v:'top'}, lhs:'T<sub>e</sub><sup>0</sup>', len:{'0':.5,'1':.38,'2':.38,'e':.32},
+  groups(q){const L1=1,L2=.7;return[
+    {f:'1',label:'T₁⁰',fs:[F('rot','z',q[0],Rl('z','q₁'))]},
+    {f:'2',label:'T₂¹',fs:[F('trans','x',L1,Tl('x','L₁')),F('rot','z',q[1],Rl('z','q₂'))]},
+    {f:'e',label:'Tₑ²',fs:[F('trans','x',L2,Tl('x','L₂'))]}];},
+  geo(P,g){g.link([0,0,-.3],[0,0,-.08],.08);g.rev(P[1],0);g.link(org(P[1]),org(P[2]),.035);g.rev(P[3],0);g.link(org(P[3]),org(P[4]),.03);g.tool(P[4]);},
+  closed(q){const L1=1,L2=.7,c1=Math.cos(q[0]),s1=Math.sin(q[0]),c12=Math.cos(q[0]+q[1]),s12=Math.sin(q[0]+q[1]);
+    return{text:'o<sub>e</sub> = (L₁c₁ + L₂c₁₂, L₁s₁ + L₂s₁₂, 0)',o:[L1*c1+L2*c12,L1*s1+L2*s12,0]};}
+},
+{ id:'wrist', tab:'Spherical wrist', title:'Example 2: 3R spherical wrist (roll–pitch–roll)', params:'d = 0.6 (tool offset along z₃)',
+  desc:'All joint axes meet at the wrist center, so o₀ = o₁ = o₂ = o₃. Frame 2 is frame 1 rotated −90° about x; frame 3 undoes it. The rotation has the ZYZ Euler structure.',
+  joints:[{s:'q₁',type:'R',min:-180,max:180},{s:'q₂',type:'R',min:-180,max:180},{s:'q₃',type:'R',min:-180,max:180}],
+  checks:[{label:'q = (0, 90°, 0)',q:[0,90,0]},{label:'q = (45°, 60°, 90°)',q:[45,60,90]}],
+  view:{target:[0,0,.1],r:2.6,v:'iso'}, lhs:'T<sub>e</sub><sup>0</sup>', len:{'0':.62,'1':.52,'2':.42,'3':.32,'e':.28},
+  groups(q){return[
+    {f:'1',label:'T₁⁰',fs:[F('rot','z',q[0],Rl('z','q₁'))]},
+    {f:'2',label:'T₂¹',fs:[F('rot','x',-90*D2R,Rl('x','−90°')),F('rot','z',q[1],Rl('z','q₂'))]},
+    {f:'3',label:'T₃²',fs:[F('rot','x',90*D2R,Rl('x','90°')),F('rot','z',q[2],Rl('z','q₃'))]},
+    {f:'e',label:'Tₑ³',fs:[F('trans','z',.6,Tl('z','d'))]}];},
+  geo(P,g){g.link([0,0,-.8],[0,0,-.25],.07);g.rev(P[1],-.2);g.rev(P[3],0,.32);g.ball(org(P[1]),.07);g.rev(P[5],.2);g.link(org(P[5]),org(P[6]),.03);g.tool(P[6]);},
+  closed(q){const d=.6;return{text:'o<sub>e</sub> = d (c₁s₂, s₁s₂, c₂)',o:[d*Math.cos(q[0])*Math.sin(q[1]),d*Math.sin(q[0])*Math.sin(q[1]),d*Math.cos(q[1])]};}
+},
+{ id:'rpp', tab:'RPP cylindrical', title:'Example 3: RPP (cylindrical) robot', params:'h = 0.8, a = 0.7',
+  desc:'Revolute base, prismatic vertical lift d₂, prismatic horizontal reach d₃. Frame 3 is frame 2 rotated 90° about y so that z₃ = x₂. The position is exactly cylindrical coordinates.',
+  joints:[{s:'q₁',type:'R',min:-180,max:180},{s:'d₂',type:'P',min:-.4,max:.5},{s:'d₃',type:'P',min:-.3,max:.5}],
+  checks:[{label:'q₁ = 90°, d₂ = d₃ = 0',q:[90,0,0]}],
+  view:{target:[.3,0,.7],r:3.4,v:'iso'}, lhs:'T<sub>3</sub><sup>0</sup>', len:{'0':.45,'1':.36,'2':.36,'3':.36},
+  groups(q){return[
+    {f:'1',label:'T₁⁰',fs:[F('rot','z',q[0],Rl('z','q₁'))]},
+    {f:'2',label:'T₂¹',fs:[F('trans','z',.8,Tl('z','h')),F('trans','z',q[1],Tl('z','d₂'))]},
+    {f:'3',label:'T₃²',fs:[F('trans','x',.7,Tl('x','a')),F('rot','y',90*D2R,Rl('y','90°')),F('trans','z',q[2],Tl('z','d₃'))]}];},
+  geo(P,g){g.rev(P[1],.06,.22);g.link(org(P[1]),apply(P[1],[0,0,1.5]),.045);g.pri(P[3]);g.link(org(P[3]),org(P[5]),.04);g.link(org(P[3]),org(P[6]),.022);g.pri(P[5],.8);g.tool(P[6]);},
+  closed(q){const h=.8,a=.7;return{text:'o<sub>3</sub> = ((a+d₃)c₁, (a+d₃)s₁, h+d₂)',o:[(a+q[2])*Math.cos(q[0]),(a+q[2])*Math.sin(q[0]),h+q[1]]};}
+},
+{ id:'scara', tab:'SCARA', title:'Example 4: SCARA robot (RRPR)', params:'H = 0.8, L₁ = 0.8, L₂ = 0.6, dₑ = 0.15 (tool length)',
+  desc:'Two vertical revolute joints, a prismatic quill and a tool roll. Rot<sub>x,180°</sub> flips z₃ and z₄ downward, so positive d₃ lowers the quill and positive q₄ turns clockwise seen from above (φ = q₁ + q₂ − q₄). Frame e sits at the tool tip, a distance dₑ further along the downward z₄, with the same orientation as frame 4: Tₑ⁴ = Trans<sub>z,dₑ</sub>.',
+  joints:[{s:'q₁',type:'R',min:-180,max:180},{s:'q₂',type:'R',min:-180,max:180},{s:'d₃',type:'P',min:0,max:.6},{s:'q₄',type:'R',min:-180,max:180}],
+  checks:[{label:'q = (90°, −90°, 0, 0)',q:[90,-90,0,0]}],
+  view:{target:[.6,0,.5],r:3.6,v:'iso'}, lhs:'T<sub>e</sub><sup>0</sup>', len:{'0':.45,'1':.36,'2':.36,'3':.36,'4':.26,'e':.26}, colors:{'4':'--f5','e':'--f4'},
+  groups(q){return[
+    {f:'1',label:'T₁⁰',fs:[F('trans','z',.8,Tl('z','H')),F('rot','z',q[0],Rl('z','q₁'))]},
+    {f:'2',label:'T₂¹',fs:[F('trans','x',.8,Tl('x','L₁')),F('rot','z',q[1],Rl('z','q₂'))]},
+    {f:'3',label:'T₃²',fs:[F('trans','x',.6,Tl('x','L₂')),F('rot','x',Math.PI,Rl('x','180°')),F('trans','z',q[2],Tl('z','d₃'))]},
+    {f:'4',label:'T₄³',fs:[F('rot','z',q[3],Rl('z','q₄'))]},
+    {f:'e',label:'Tₑ⁴',fs:[F('trans','z',.15,Tl('z','dₑ'))]}];},
+  geo(P,g){g.link([0,0,0],apply(P[1],[0,0,-.06]),.06);g.rev(P[2],-.04);g.link(org(P[2]),org(P[3]),.04);g.rev(P[4],0);g.link(org(P[4]),org(P[5]),.035);g.pri(P[6]);g.link(apply(P[7],[0,0,-.4]),org(P[7]),.018);g.rev(P[8],.02,.06,.035);g.link(org(P[8]),org(P[9]),.012);g.tool(P[9]);},
+  closed(q){const H=.8,L1=.8,L2=.6,c1=Math.cos(q[0]),s1=Math.sin(q[0]),c12=Math.cos(q[0]+q[1]),s12=Math.sin(q[0]+q[1]);
+    return{text:'o<sub>e</sub> = (L₁c₁ + L₂c₁₂, L₁s₁ + L₂s₁₂, H − d₃ − dₑ)',o:[L1*c1+L2*c12,L1*s1+L2*s12,H-q[2]-.15]};}
+},
+{ id:'ur5e', tab:'UR5e (MJCF)', title:'Example 5: UR5e from the MuJoCo Menagerie MJCF', params:'d₁ = 0.163, a₂ = 0.425, a₃ = 0.392, d₄ = 0.134, d₅ = 0.100, d₆ = 0.100 (m)',
+  desc:'Geometry and joint signs come from <code>universal_robots_ur5e/ur5e.xml</code>. The MJCF puts four joint axes on local y, so the frames are re-assigned with the handout recipe (z<sub>i</sub> on joint i, same positive direction as the MJCF axis, so q<sub>i</sub> equals MuJoCo <code>qpos[i]</code>). Frame 0 is the MuJoCo world: the base body’s 180° yaw is absorbed, so at home the arm reaches along −x₀. Axes 2, 3, 4 are parallel and axis 2 meets axis 1, so o₂ = o₁ and the 0.138 / −0.131 / 0.127 y-offsets collapse into d₄. Checked against MuJoCo <code>site_xpos</code>/<code>site_xmat</code> at 500 random poses (error ≈ 10⁻¹⁵).',
+  extra:`<div style="overflow-x:auto"><table class="ftab"><thead><tr><th>Frame</th><th>MJCF joint / site</th><th>o<sub>i</sub> at home (frame 0)</th><th>z<sub>i</sub></th></tr></thead><tbody>
+    <tr><td>1</td><td>shoulder_pan_joint</td><td>(0, 0, 0.163)</td><td>+z₀</td></tr>
+    <tr><td>2</td><td>shoulder_lift_joint</td><td>(0, 0, 0.163)</td><td>−y₀</td></tr>
+    <tr><td>3</td><td>elbow_joint</td><td>(−0.425, 0, 0.163)</td><td>−y₀</td></tr>
+    <tr><td>4</td><td>wrist_1_joint</td><td>(−0.817, 0, 0.163)</td><td>−y₀</td></tr>
+    <tr><td>5</td><td>wrist_2_joint</td><td>(−0.817, −0.134, 0.163)</td><td>−z₀</td></tr>
+    <tr><td>6</td><td>wrist_3_joint</td><td>(−0.817, −0.134, 0.063)</td><td>−y₀</td></tr>
+    <tr><td>e</td><td>attachment_site</td><td>(−0.817, −0.234, 0.063)</td><td>−y₀</td></tr></tbody></table></div>`,
+  joints:[{s:'q₁',n:'shoulder pan',type:'R',min:-180,max:180},{s:'q₂',n:'shoulder lift',type:'R',min:-180,max:180},{s:'q₃',n:'elbow',type:'R',min:-180,max:180},
+          {s:'q₄',n:'wrist 1',type:'R',min:-180,max:180},{s:'q₅',n:'wrist 2',type:'R',min:-180,max:180},{s:'q₆',n:'wrist 3',type:'R',min:-180,max:180}],
+  checks:[{label:'upright (0, −90°, 0, −90°, 0, 0)',q:[0,-90,0,-90,0,0]},{label:'(30°, −60°, 90°, −120°, −90°, 45°)',q:[30,-60,90,-120,-90,45]}],
+  view:{target:[-.4,-.07,.2],r:1.9,v:'iso'}, lhs:'T<sub>e</sub><sup>0</sup>', sc:.5,
+  colors:{'4':'--f5','5':'--f6','6':'--f7','e':'--f4'},
+  len:{'0':.22,'1':.15,'2':.15,'3':.15,'4':.15,'5':.13,'6':.13,'e':.11},
+  groups(q){return[
+    {f:'1',label:'T₁⁰',fs:[F('trans','z',.163,Tl('z','d₁')),F('rot','z',q[0],Rl('z','q₁'))]},
+    {f:'2',label:'T₂¹',fs:[F('rot','x',90*D2R,Rl('x','90°')),F('rot','z',q[1],Rl('z','q₂'))]},
+    {f:'3',label:'T₃²',fs:[F('trans','x',-.425,Tl('x','−a₂')),F('rot','z',q[2],Rl('z','q₃'))]},
+    {f:'4',label:'T₄³',fs:[F('trans','x',-.392,Tl('x','−a₃')),F('rot','z',q[3],Rl('z','q₄'))]},
+    {f:'5',label:'T₅⁴',fs:[F('trans','z',.134,Tl('z','d₄')),F('rot','x',90*D2R,Rl('x','90°')),F('rot','z',q[4],Rl('z','q₅'))]},
+    {f:'6',label:'T₆⁵',fs:[F('trans','z',.1,Tl('z','d₅')),F('rot','x',-90*D2R,Rl('x','−90°')),F('rot','z',q[5],Rl('z','q₆'))]},
+    {f:'e',label:'Tₑ⁶',fs:[F('trans','z',.1,Tl('z','d₆'))]}];},
+  geo(P,g){g.link([0,0,0],[0,0,.1],.06);g.rev(P[2],.1,.12,.055);
+    g.rev(P[4],.07,.15,.055);g.link(apply(P[4],[0,0,.138]),apply(P[6],[0,0,.138]),.04);
+    g.rev(P[6],.07,.15,.045);g.link(apply(P[6],[0,0,.007]),apply(P[8],[0,0,.007]),.033);
+    g.rev(P[8],.07,.15,.04);g.link(apply(P[8],[0,0,.007]),org(P[9]),.03);
+    g.rev(P[11],.02,.12,.04);g.link(org(P[11]),org(P[14]),.03);
+    g.rev(P[14],.04,.09,.038);g.link(org(P[14]),org(P[15]),.02);g.tool(P[15],.5);},
+  closed(q){const [d1,a2,a3,d4,d5,d6]=[.163,.425,.392,.134,.1,.1],C=Math.cos,S=Math.sin,q234=q[1]+q[2]+q[3];
+    const rho=-a2*C(q[1])-a3*C(q[1]+q[2])+d5*S(q234)-d6*S(q[4])*C(q234), w=d4+d6*C(q[4]);
+    return{text:'o<sub>e</sub> = (c₁ρ + s₁w, s₁ρ − c₁w, d₁ − a₂s₂ − a₃s₂₃ − d₅c₂₃₄ − d₆s₅s₂₃₄), ρ = −a₂c₂ − a₃c₂₃ + d₅s₂₃₄ − d₆s₅c₂₃₄, w = d₄ + d₆c₅',
+      o:[C(q[0])*rho+S(q[0])*w,S(q[0])*rho-C(q[0])*w,d1-a2*S(q[1])-a3*S(q[1]+q[2])-d5*C(q234)-d6*S(q[4])*S(q234)]};}
+}];
+const FCOL={'0':'--f0','1':'--f1','2':'--f2','3':'--f3','4':'--f4','e':'--f4'};
+const fc=f=>((EX[S.ex]&&EX[S.ex].colors)||{})[f]||FCOL[f];
+
+/* ---------- state ---------- */
+const S={ex:0,mode:'joint',q:[],k:0,anim:null,playAll:false,sweep:false,sweepT0:0,sweepBase:[]};
+
+/* ---------- three.js scene ---------- */
+const canvas=document.getElementById('cv'), stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,.05,100);
+scene.add(new THREE.HemisphereLight(0xffffff,0x667788,.85));
+const dl=new THREE.DirectionalLight(0xffffff,.65);dl.position.set(3,6,4);scene.add(dl);
+const world=new THREE.Group(); world.rotation.x=-Math.PI/2; scene.add(world); // robot z-up -> three y-up
+let content=new THREE.Group(); world.add(content);
+let grid=null;
+
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const col=n=>new THREE.Color(css(n));
+
+function disposeTree(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material){if(c.material.map)c.material.map.dispose();c.material.dispose();}});}
+
+const GEO={cyl:new THREE.CylinderGeometry(1,1,1,20),cone:new THREE.ConeGeometry(1,1,16),box:new THREE.BoxGeometry(1,1,1),ball:new THREE.SphereGeometry(1,20,14)};
+let MAT={};
+let pools={}, used={};
+
+function label(base,sub,color,bg,sc){sc=sc||1;
+  const c=document.createElement('canvas');c.width=128;c.height=64;const x=c.getContext('2d');
+  x.lineJoin='round';x.textBaseline='middle';
+  x.font='600 44px "IBM Plex Sans", system-ui, sans-serif';const w=x.measureText(base).width;
+  x.font='600 28px "IBM Plex Sans", system-ui, sans-serif';const w2=sub?x.measureText(sub).width:0;
+  const x0=(128-w-w2-2)/2;
+  x.strokeStyle=bg;x.lineWidth=7;x.fillStyle=color;
+  x.font='600 44px "IBM Plex Sans", system-ui, sans-serif';x.strokeText(base,x0,28);x.fillText(base,x0,28);
+  if(sub){x.font='600 28px "IBM Plex Sans", system-ui, sans-serif';x.strokeText(sub,x0+w+2,42);x.fillText(sub,x0+w+2,42);}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}));
+  sp.scale.set(.22*sc,.11*sc,1);sp.renderOrder=10;return sp;
+}
+function triad(colorCss,sub,len,opts={}){
+  const g=new THREE.Group();g.matrixAutoUpdate=false;
+  const color=css(colorCss), bg=css('--scene');
+  const m=new THREE.MeshStandardMaterial({color,roughness:.5,metalness:0,transparent:!!opts.opacity,opacity:opts.opacity||1});
+  const sc=opts.sc||1, r=(opts.thick||.011)*sc, hl=Math.min(.09*sc,len*.28), hr=r*3.2;
+  [['x',[0,0,-Math.PI/2]],['y',[0,0,0]],['z',[Math.PI/2,0,0]]].forEach(([ax,e])=>{
+    const a=new THREE.Group();a.rotation.set(...e);
+    const sh=new THREE.Mesh(GEO.cyl,m);sh.scale.set(r,len-hl,r);sh.position.y=(len-hl)/2;a.add(sh);
+    const co=new THREE.Mesh(GEO.cone,m);co.scale.set(hr,hl,hr);co.position.y=len-hl/2;a.add(co);
+    if(opts.labels!==false){const s=label(ax,sub,color,bg,sc);s.position.y=len+.09*sc;a.add(s);}
+    g.add(a);});
+  return g;
+}
+const toM4=T=>new THREE.Matrix4().set(...T);
+
+/* drawing context for robot geometry, using pooled meshes */
+const Y=new THREE.Vector3(0,1,0);
+function take(kind,make){used[kind]=used[kind]||0;pools[kind]=pools[kind]||[];let m=pools[kind][used[kind]];
+  if(!m){m=make();m.matrixAutoUpdate=false;content.add(m);pools[kind].push(m);}used[kind]++;m.visible=true;return m;}
+const G={
+  link(a,b,r){const m=take('link',()=>new THREE.Mesh(GEO.cyl,MAT.link));const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b);
+    const d=B.clone().sub(A),L=d.length();if(L<1e-6){m.visible=false;return;}
+    m.matrix.compose(A.clone().add(B).multiplyScalar(.5),new THREE.Quaternion().setFromUnitVectors(Y,d.normalize()),new THREE.Vector3(r,L,r));},
+  rev(T,off,h,rr){const m=take('rev',()=>new THREE.Mesh(GEO.cyl,MAT.joint));
+    m.matrix.copy(toM4(T)).multiply(new THREE.Matrix4().makeTranslation(0,0,off||0)).multiply(new THREE.Matrix4().makeRotationX(Math.PI/2)).multiply(new THREE.Matrix4().makeScale(rr||.065,h||.2,rr||.065));},
+  pri(T,s){s=s||1;const m=take('pri',()=>new THREE.Mesh(GEO.box,MAT.joint));m.matrix.copy(toM4(T)).multiply(new THREE.Matrix4().makeScale(.11*s,.11*s,.22*s));},
+  ball(p,r){const m=take('ball',()=>new THREE.Mesh(GEO.ball,MAT.joint));m.matrix.compose(new THREE.Vector3(...p),new THREE.Quaternion(),new THREE.Vector3(r,r,r));},
+  tool(T,k){k=k||1;const m=take('tool',()=>new THREE.Mesh(GEO.box,MAT.tool));m.matrix.copy(toM4(T)).multiply(new THREE.Matrix4().makeTranslation(.06*k,0,0)).multiply(new THREE.Matrix4().makeScale(.14*k,.022*k,.07*k));
+    const b=take('ball',()=>new THREE.Mesh(GEO.ball,MAT.joint));b.matrix.compose(new THREE.Vector3(...org(T)),new THREE.Quaternion(),new THREE.Vector3(.03*k,.03*k,.03*k));}
+};
+
+let frameTriads={}, ghostPool=[], mover=null, groupsCache=null;
+
+function buildScene(){
+  scene.remove(world);disposeTree(content);world.remove(content);content=new THREE.Group();world.add(content);scene.add(world);
+  if(grid){scene.remove(grid);grid.geometry.dispose();grid.material.dispose();}
+  scene.background=col('--scene');
+  grid=new THREE.GridHelper(4,20,col('--grid1'),col('--grid2'));grid.position.y=-.001;scene.add(grid);
+  MAT={link:new THREE.MeshStandardMaterial({color:css('--link'),roughness:.6,transparent:true}),
+       joint:new THREE.MeshStandardMaterial({color:css('--joint'),roughness:.5,transparent:true}),
+       tool:new THREE.MeshStandardMaterial({color:css('--tool'),roughness:.45,transparent:true})};
+  pools={};used={};
+  const ex=EX[S.ex], gs=ex.groups(qRad());
+  frameTriads={};
+  const sc=ex.sc||1;frameTriads['0']=triad('--f0','0',ex.len['0'],{sc});content.add(frameTriads['0']);
+  gs.forEach(g=>{const t=triad(fc(g.f),g.f==='e'?'e':g.f,ex.len[g.f]||.35,{sc});frameTriads[g.f]=t;content.add(t);});
+  ghostPool=[];
+  const nF=gs.reduce((n,g)=>n+g.fs.length,0);
+  for(let i=0;i<nF;i++){const t=triad('--f0','',.22*sc,{opacity:.45,labels:false,thick:.007,sc});t.visible=false;content.add(t);ghostPool.push(t);}
+  mover=triad('--moving','',(ex.len['1']||.36)+.04*sc,{thick:.012,sc});content.add(mover);
+}
+
+/* ---------- camera orbit ---------- */
+const cam={target:new THREE.Vector3(),r:3,theta:0,phi:1};
+const VIEWS={iso:{theta:Math.PI/2-.75,phi:1.05},top:{theta:Math.PI/2,phi:.06},front:{theta:Math.PI/2,phi:Math.PI/2-.02}};
+function setView(v){const ex=EX[S.ex],t=ex.view.target;cam.target.set(t[0],t[2],-t[1]);cam.r=ex.view.r;Object.assign(cam,VIEWS[v]);}
+function placeCam(){const {r,theta,phi}=cam;camera.position.set(cam.target.x+r*Math.sin(phi)*Math.cos(theta),cam.target.y+r*Math.cos(phi),cam.target.z+r*Math.sin(phi)*Math.sin(theta));camera.lookAt(cam.target);}
+let drag=null;
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;cam.theta+=(e.clientX-drag.x)*.008;cam.phi=Math.min(Math.PI-.05,Math.max(.05,cam.phi-(e.clientY-drag.y)*.008));drag={x:e.clientX,y:e.clientY};});
+canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
+canvas.addEventListener('wheel',e=>{e.preventDefault();cam.r=Math.min(12,Math.max(1,cam.r*Math.exp(e.deltaY*.001)));},{passive:false});
+['iso','top','front'].forEach(v=>document.getElementById('v-'+v).onclick=()=>setView(v));
+new ResizeObserver(()=>{const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}).observe(stage);
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+function qRad(){return EX[S.ex].joints.map((j,i)=>j.type==='R'?S.q[i]*D2R:S.q[i]);}
+function fmtJ(j,v){return j.type==='R'?fmt(v,1)+'°':fmt(v,2);}
+
+function renderTabs(){$('tabs').innerHTML=EX.map((e,i)=>`<button class="tab" role="tab" type="button" aria-selected="${i===S.ex}" data-i="${i}"><b>${i+1}</b>${e.tab}</button>`).join('');
+  $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>selectEx(+b.dataset.i));}
+
+function renderJoints(){const ex=EX[S.ex];
+  $('joints').innerHTML=ex.joints.map((j,i)=>`<div class="joint"><label for="j-${i}">${j.s}<small>${j.n||(j.type==='R'?'revolute':'prismatic')}</small></label>
+    <input type="range" id="j-${i}" min="${j.min}" max="${j.max}" step="${j.type==='R'?1:.01}" value="${S.q[i]}"><output id="o-${i}">${fmtJ(j,S.q[i])}</output></div>`).join('');
+  ex.joints.forEach((j,i)=>$('j-'+i).oninput=e=>{stopSweep();S.q[i]=+e.target.value;$('o-'+i).textContent=fmtJ(j,S.q[i]);});
+  $('checks').innerHTML=ex.checks.map((c,i)=>`<button class="btn" type="button" data-c="${i}">Check: ${c.label}</button>`).join('');
+  $('checks').querySelectorAll('button').forEach(b=>b.onclick=()=>setQ(ex.checks[+b.dataset.c].q));}
+function syncSliders(){EX[S.ex].joints.forEach((j,i)=>{$('j-'+i).value=S.q[i];$('o-'+i).textContent=fmtJ(j,S.q[i]);});}
+function setQ(q){stopSweep();S.q=q.slice();syncSliders();}
+
+let chipKey='';
+function renderProduct(force){const ex=EX[S.ex],gs=ex.groups(qRad());
+  const key=S.ex+'|'+S.mode+'|'+S.k+'|'+(S.anim?S.anim.idx:-1);if(!force&&key===chipKey)return;chipKey=key;
+  let idx=0;
+  const html=gs.map(g=>{const chips=g.fs.map(f=>{const i=idx++;let cls='chip';
+      if(S.mode==='step'){if(i<S.k)cls+=' done';if((S.anim&&S.anim.idx===i)||(!S.anim&&i===S.k))cls+=' active';}
+      return `<button class="${cls}" type="button" data-i="${i}">${f.label}</button>`;}).join('');
+    return `<div class="grp" style="--gc:var(${fc(g.f)})"><div class="chips">${chips}</div><div class="glabel">${g.label}</div></div>`;}).join('');
+  $('product').innerHTML=`<span class="lhs">${ex.lhs} =</span>`+html;
+  $('product').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{if(S.mode!=='step')setMode('step');S.anim=null;S.playAll=false;S.k=+b.dataset.i+1;});
+}
+
+function setMode(m){S.mode=m;stopSweep();S.anim=null;S.playAll=false;
+  $('m-joint').setAttribute('aria-pressed',m==='joint');$('m-step').setAttribute('aria-pressed',m==='step');
+  $('stepBtns').hidden=m!=='step';$('b-sweep').disabled=m==='step';
+  if(m==='step')S.k=0;
+  $('prodNote').innerHTML=m==='step'?'Read left to right: each factor moves the black frame about or along its <em>current</em> axes. A colored frame appears when its T<sub>i</sub><sup>i−1</sup> is complete. Sliders still set the joint values.':'Each factor moves the frame about or along its <em>current</em> axes. Switch to “Step through product” to watch it happen, or click a factor.';
+  renderProduct(true);}
+
+function selectEx(i){S.ex=i;S.q=EX[i].joints.map(()=>0);S.k=0;S.anim=null;S.playAll=false;stopSweep();
+  const ex=EX[i];$('exTitle').textContent=ex.title;$('exParams').textContent=ex.params;$('exDesc').innerHTML=ex.desc;$('exExtra').innerHTML=ex.extra||'';$('exExtra').hidden=!ex.extra;
+  const names=['0'].concat(ex.groups(qRad()).map(g=>g.f));
+  $('legend').innerHTML=names.map(n=>`<span><i style="background:var(${fc(n)})"></i>frame ${n}</span>`).join('')+`<span><i style="background:var(--moving)"></i>moving frame (step mode)</span>`;
+  renderTabs();renderJoints();buildScene();setView(ex.view.v);renderProduct(true);}
+
+/* step controls */
+function nFactors(){return EX[S.ex].groups(qRad()).reduce((n,g)=>n+g.fs.length,0);}
+function flat(){return EX[S.ex].groups(qRad()).flatMap(g=>g.fs);}
+function startStep(){const fs=flat();if(S.anim||S.k>=fs.length)return false;const f=fs[S.k];
+  const mag=f.kind==='rot'?Math.abs(f.val)/Math.PI:Math.abs(f.val);
+  const dur=reduce?1:(mag<1e-6?350:550+750*Math.min(1,mag));
+  S.anim={idx:S.k,t0:performance.now(),dur};return true;}
+$('b-step').onclick=()=>{S.playAll=false;startStep();};
+$('b-back').onclick=()=>{S.playAll=false;S.anim=null;S.k=Math.max(0,S.k-1);};
+$('b-reset').onclick=()=>{S.playAll=false;S.anim=null;S.k=0;};
+$('b-play').onclick=()=>{S.anim=null;if(S.k>=nFactors())S.k=0;S.playAll=true;startStep();};
+$('m-joint').onclick=()=>setMode('joint');$('m-step').onclick=()=>setMode('step');
+$('b-home').onclick=()=>setQ(EX[S.ex].joints.map(()=>0));
+function stopSweep(){if(S.sweep){S.sweep=false;$('b-sweep').textContent='Animate joints';}}
+$('b-sweep').onclick=()=>{if(S.sweep){stopSweep();return;}S.sweep=true;S.sweepT0=performance.now();S.sweepBase=S.q.slice();$('b-sweep').textContent='Stop';};
+
+/* ---------- per-frame update ---------- */
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let matKey='', lastCap='';
+function setCaption(h){if(h!==lastCap){$('caption').innerHTML=h;lastCap=h;}}
+
+function frame(now){
+  const ex=EX[S.ex];
+  if(S.sweep){const t=(now-S.sweepT0)/1000;
+    ex.joints.forEach((j,i)=>{const ph=.75*t+i*1.7, env=Math.min(1,t/1.2);
+      if(j.type==='R')S.q[i]=Math.round(S.sweepBase[i]*(1-env)+75*Math.sin(ph)*env);
+      else{const mid=(j.min+j.max)/2,half=(j.max-j.min)/2*.9;S.q[i]=+(S.sweepBase[i]*(1-env)+(mid+half*Math.sin(ph))*env).toFixed(2);}});
+    syncSliders();}
+  const gs=ex.groups(qRad()), fs=gs.flatMap(g=>g.fs), n=fs.length;
+  const P=[I4()];fs.forEach((f,i)=>P.push(mul(P[i],fmat(f))));
+  const ends={};let c=0;gs.forEach(g=>{c+=g.fs.length;ends[c]=g.f;});
+
+  // animation progress
+  let s=0;
+  if(S.anim){s=Math.min(1,(now-S.anim.t0)/S.anim.dur);
+    if(s>=1){S.k=S.anim.idx+1;S.anim=null;s=0;
+      if(S.playAll&&S.k<n){const wait=reduce?0:260;setTimeout(()=>{if(S.playAll)startStep();},wait);}else S.playAll=false;}}
+  const cum=S.anim?mul(P[S.k],fmat(fs[S.k],ease(Math.max(0,s)))):P[S.k];
+
+  // robot geometry
+  used={};ex.geo(P,G);
+  for(const k in pools)pools[k].forEach((m,i)=>{if(i>=(used[k]||0))m.visible=false;});
+  const ghost=S.mode==='step';
+  for(const k in MAT){MAT[k].opacity=ghost?.22:1;MAT[k].depthWrite=!ghost;}
+
+  // frames
+  frameTriads['0'].matrix.copy(toM4(I4()));frameTriads['0'].visible=true;
+  if(!ghost){
+    c=0;gs.forEach(g=>{c+=g.fs.length;const t=frameTriads[g.f];t.visible=true;t.matrix.copy(toM4(P[c]));});
+    ghostPool.forEach(t=>t.visible=false);mover.visible=false;
+  }else{
+    gs.forEach(g=>frameTriads[g.f].visible=false);
+    ghostPool.forEach(t=>t.visible=false);
+    for(let j=1;j<=S.k;j++){if(ends[j]){const t=frameTriads[ends[j]];t.visible=true;t.matrix.copy(toM4(P[j]));}
+      else{const t=ghostPool[j-1];t.visible=true;t.matrix.copy(toM4(P[j]));}}
+    mover.visible=true;mover.matrix.copy(toM4(cum));
+  }
+
+  // matrix panel
+  const M=ghost?cum:P[n];
+  const lhs=ghost?(S.k===0&&!S.anim?'I =':'product so far ='):ex.lhs+' =';
+  const key=M.map(v=>fmt(v)).join(',')+lhs;
+  if(key!==matKey){matKey=key;
+    $('mat').innerHTML=M.map((v,i)=>{const r=Math.floor(i/4),cc=i%4;return `<span class="${r===3?'h':cc===3?'p':''}">${fmt(v)}</span>`;}).join('');
+    $('matLhs').innerHTML=lhs;
+    $('matTitle').textContent=ghost?`After ${S.k} of ${n} factors`+(S.anim?' (applying next)':''):'Result at the current joint values';
+    const cf=ex.closed(qRad()), o=org(P[n]), err=Math.hypot(o[0]-cf.o[0],o[1]-cf.o[1],o[2]-cf.o[2]);
+    $('closed').innerHTML=`Notes: ${cf.text} = (${cf.o.map(v=>fmt(v)).join(', ')}) ${err<1e-9?'<span class="pill">matches product</span>':''}`;
+  }
+
+  // caption
+  if(!ghost)setCaption(S.sweep?'Animating all joints. Watch each frame ride on its link.':'Drag to orbit, scroll to zoom. Use the sliders or a Check pose from the notes.');
+  else if(S.anim){const f=fs[S.anim.idx];
+    setCaption(`Applying ${f.label}: ${f.kind==='rot'?`rotate ${fmt(f.val*R2D,1)}° about the current ${f.axis}-axis`:`slide ${fmt(f.val,2)} along the current ${f.axis}-axis`}`);}
+  else if(S.k===0)setCaption('Start at frame 0. Press Step to apply the first factor.');
+  else if(S.k>=n)setCaption(`Done. The moving frame now sits on frame ${gs[gs.length-1].f}: ${ex.lhs}.`);
+  else setCaption(`Applied ${S.k} of ${n}. Next: ${fs[S.k].label}`);
+
+  renderProduct();
+  placeCam();renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+
+/* theme changes rebuild colors */
+const rebuild=()=>{buildScene();matKey='';};
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',rebuild);
+new MutationObserver(rebuild).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(rebuild);
+
+selectEx(0);
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
