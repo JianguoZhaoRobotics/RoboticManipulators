@@ -17,6 +17,7 @@ project:
         - file: Chapters/Ch3 2D Kinematics/Ch3 Kinematics in 2D.ipynb
         - file: Chapters/Ch4 Homogeneous Transformation/Ch4 Homogeneous Transformation.ipynb
         - file: Chapters/Ch5 Forward Position Kinematics/Ch5 Forward Position Kinematics.ipynb
+        - file: Chapters/Ch6 Velocity Kinematics/Ch6 Velocity Kinematics.ipynb
     - title: Labs
       children:
         - file: Labs/Lab0/Lab0.md
